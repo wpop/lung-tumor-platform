@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Git
+.git/
+.gitignore
+
+# VS Code
+.vscode/
+
+# React
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+
+# Generated data
+backend/uploads/
+backend/outputs/
+
+# Large model checkpoints
+backend/checkpoints/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
