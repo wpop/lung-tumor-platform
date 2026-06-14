@@ -1,4 +1,9 @@
-import { type ChangeEvent, useEffect, useState } from 'react'
+import {
+  type ChangeEvent,
+  type DragEvent,
+  useEffect,
+  useState,
+} from 'react'
 import './App.css'
 import {
   getHealth,
@@ -22,6 +27,7 @@ function App() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
+  const [isDraggingFile, setIsDraggingFile] = useState(false)
   const [predictionResult, setPredictionResult] = useState<PredictionResponse | null>(null)
   const [overlayUrl, setOverlayUrl] = useState('')
   const [maskUrl, setMaskUrl] = useState('')
@@ -58,6 +64,56 @@ function App() {
     )
   }
 
+  function isNiftiGzipFile(file: File) {
+    return file.name.toLowerCase().endsWith('.nii.gz')
+  }
+
+  function resetPredictionState() {
+    setPredictionResult(null)
+    setOverlayUrl('')
+    setMaskUrl('')
+    setCaseId('')
+    setVolumeDepth(0)
+    setSliceIndex(0)
+  }
+
+  function selectUploadFile(file: File | null) {
+    setSelectedFile(file)
+    setUploadError('')
+    resetPredictionState()
+  }
+
+  function handleDragOver(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'copy'
+    setIsDraggingFile(true)
+  }
+
+  function handleDragLeave(event: DragEvent<HTMLDivElement>) {
+    if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      return
+    }
+
+    setIsDraggingFile(false)
+  }
+
+  function handleDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault()
+    setIsDraggingFile(false)
+
+    const file = event.dataTransfer.files[0] ?? null
+    if (!file) {
+      return
+    }
+
+    if (!isNiftiGzipFile(file)) {
+      setUploadError('Please drop a .nii.gz CT volume file.')
+      return
+    }
+
+    selectUploadFile(file)
+  }
+
   useEffect(() => {
     let isMounted = true
 
@@ -91,14 +147,7 @@ function App() {
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null
-    setSelectedFile(file)
-    setUploadError('')
-    setPredictionResult(null)
-    setOverlayUrl('')
-    setMaskUrl('')
-    setCaseId('')
-    setVolumeDepth(0)
-    setSliceIndex(0)
+    selectUploadFile(file)
   }
 
   async function handleUpload() {
@@ -108,12 +157,7 @@ function App() {
 
     setIsUploading(true)
     setUploadError('')
-    setPredictionResult(null)
-    setOverlayUrl('')
-    setMaskUrl('')
-    setCaseId('')
-    setVolumeDepth(0)
-    setSliceIndex(0)
+    resetPredictionState()
 
     try {
       // Send the selected NIfTI file to the FastAPI prediction endpoint.
@@ -172,9 +216,20 @@ function App() {
             <h2>Upload CT Volume</h2>
           </div>
 
+          <div
+            className={`drop-zone${isDraggingFile ? ' active' : ''}`}
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <strong>Drop .nii.gz file here</strong>
+            <span>or choose a file below</span>
+          </div>
+
           <label className="file-picker">
             <span>Choose NIfTI file</span>
-            <input type="file" onChange={handleFileChange} />
+            <input type="file" accept=".nii.gz" onChange={handleFileChange} />
           </label>
 
           <p className="file-name">
