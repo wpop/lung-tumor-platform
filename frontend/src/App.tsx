@@ -35,6 +35,16 @@ function App() {
       ? `http://127.0.0.1:8000/results/${caseId}/overlay/${sliceIndex}?v=${sliceIndex}`
       : ''
 
+  function goToPreviousSlice() {
+    setSliceIndex((currentSliceIndex) => Math.max(0, currentSliceIndex - 1))
+  }
+
+  function goToNextSlice() {
+    setSliceIndex((currentSliceIndex) =>
+      Math.min(maxSliceIndex, currentSliceIndex + 1),
+    )
+  }
+
   useEffect(() => {
     let isMounted = true
 
@@ -222,6 +232,24 @@ function App() {
                   value={sliceIndex}
                   onChange={(event) => setSliceIndex(Number(event.target.value))}
                 />
+                <div className="slice-button-row">
+                  <button
+                    className="slice-button"
+                    type="button"
+                    onClick={goToPreviousSlice}
+                    disabled={sliceIndex === 0}
+                  >
+                    Previous slice
+                  </button>
+                  <button
+                    className="slice-button"
+                    type="button"
+                    onClick={goToNextSlice}
+                    disabled={sliceIndex === maxSliceIndex}
+                  >
+                    Next slice
+                  </button>
+                </div>
                 <img
                   key={sliceIndex}
                   src={sliceOverlayUrl}

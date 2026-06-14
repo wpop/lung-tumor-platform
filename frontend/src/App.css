@@ -197,8 +197,36 @@ input[type='file'] {
 .slice-slider {
   display: block;
   width: 100%;
-  margin: 0 0 1rem;
+  margin: 0 0 0.75rem;
   accent-color: #1769e0;
+}
+
+.slice-button-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.slice-button {
+  flex: 1;
+  border: 1px solid #c8d4e3;
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  background: #ffffff;
+  color: #233047;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.slice-button:hover:not(:disabled) {
+  border-color: #1769e0;
+  color: #1769e0;
+}
+
+.slice-button:disabled {
+  color: #8796aa;
+  cursor: not-allowed;
 }
 
 .overlay-preview img {
@@ -299,6 +327,18 @@ pre {
     display: block;
     margin-top: 0.35rem;
     white-space: normal;
+  }
+
+  .slice-button-row {
+    display: block;
+  }
+
+  .slice-button {
+    width: 100%;
+  }
+
+  .slice-button + .slice-button {
+    margin-top: 0.75rem;
   }
 }
 
