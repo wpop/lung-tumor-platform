@@ -34,6 +34,13 @@ function App() {
     caseId && volumeDepth > 0
       ? `http://127.0.0.1:8000/results/${caseId}/overlay/${sliceIndex}?v=${sliceIndex}`
       : ''
+  const volumeSize = predictionResult
+    ? predictionResult.inference.volume_shape.join(' × ')
+    : ''
+  const bestProbabilityPercent = predictionResult
+    ? `${(predictionResult.inference.best_probability_max * 100).toFixed(2)}%`
+    : ''
+  const inferenceDevice = health?.gpu ? 'CUDA' : 'CPU'
 
   function goToPreviousSlice() {
     setSliceIndex((currentSliceIndex) => Math.max(0, currentSliceIndex - 1))
@@ -185,94 +192,112 @@ function App() {
         </section>
 
         {predictionResult !== null && (
-          <section className="card">
-            <div className="card-header">
-              <h2>Prediction Results</h2>
-            </div>
+          <>
+            <section className="card">
+              <div className="card-header">
+                <h2>Case Information</h2>
+              </div>
 
-            <div className="stats-grid">
-              <div>
-                <span>Best slice</span>
-                <strong>{predictionResult.inference.best_slice_index}</strong>
-              </div>
-              <div>
-                <span>Positive voxels</span>
-                <strong>{predictionResult.inference.positive_voxel_count}</strong>
-              </div>
-              <div>
-                <span>Best probability</span>
-                <strong>
-                  {predictionResult.inference.best_probability_max.toFixed(6)}
-                </strong>
-              </div>
-              <div>
-                <span>Threshold</span>
-                <strong>{predictionResult.inference.threshold}</strong>
-              </div>
-              <div>
-                <span>Volume shape</span>
-                <strong>{predictionResult.inference.volume_shape.join(' x ')}</strong>
-              </div>
-            </div>
-
-            {sliceOverlayUrl && (
-              <div className="overlay-preview">
-                <div className="slice-control-header">
-                  <h3>Overlay Preview</h3>
-                  <span>
-                    Slice {sliceIndex} / {maxSliceIndex}
-                  </span>
+              <div className="case-info-grid">
+                <div>
+                  <span>Filename</span>
+                  <strong>{predictionResult.filename}</strong>
                 </div>
-                <input
-                  aria-label="Overlay slice"
-                  className="slice-slider"
-                  type="range"
-                  min={0}
-                  max={maxSliceIndex}
-                  value={sliceIndex}
-                  onChange={(event) => setSliceIndex(Number(event.target.value))}
-                />
-                <div className="slice-button-row">
-                  <button
-                    className="slice-button"
-                    type="button"
-                    onClick={goToPreviousSlice}
-                    disabled={sliceIndex === 0}
-                  >
-                    Previous slice
-                  </button>
-                  <button
-                    className="slice-button"
-                    type="button"
-                    onClick={goToNextSlice}
-                    disabled={sliceIndex === maxSliceIndex}
-                  >
-                    Next slice
-                  </button>
+                <div>
+                  <span>Volume size</span>
+                  <strong>{volumeSize}</strong>
                 </div>
-                <img
-                  key={sliceIndex}
-                  src={sliceOverlayUrl}
-                  alt={`Overlay slice ${sliceIndex}`}
-                  className="overlay-image"
-                />
+                <div>
+                  <span>Best slice</span>
+                  <strong>{predictionResult.inference.best_slice_index}</strong>
+                </div>
+                <div>
+                  <span>Positive voxels</span>
+                  <strong>{predictionResult.inference.positive_voxel_count}</strong>
+                </div>
+                <div>
+                  <span>Threshold</span>
+                  <strong>{predictionResult.inference.threshold}</strong>
+                </div>
+                <div>
+                  <span>Best probability</span>
+                  <strong>{bestProbabilityPercent}</strong>
+                </div>
+                <div>
+                  <span>Model name</span>
+                  <strong>UNet2D</strong>
+                </div>
+                <div>
+                  <span>Inference device</span>
+                  <strong>{inferenceDevice}</strong>
+                </div>
               </div>
-            )}
+            </section>
 
-            <div className="download-center">
-              <a className="download-button" href={overlayUrl} download>
-                Download Overlay
-              </a>
-              <a className="download-button secondary" href={maskUrl} download>
-                Download Predicted Mask
-              </a>
-            </div>
+            <section className="card">
+              <div className="card-header">
+                <h2>Prediction Results</h2>
+              </div>
 
-            <details className="raw-response">
-              <summary>Show raw API response</summary>
-              <pre>{JSON.stringify(predictionResult, null, 2)}</pre>
-            </details>
-          </section>
+              {sliceOverlayUrl && (
+                <div className="overlay-preview">
+                  <div className="slice-control-header">
+                    <h3>Overlay Preview</h3>
+                    <span>
+                      Slice {sliceIndex} / {maxSliceIndex}
+                    </span>
+                  </div>
+                  <input
+                    aria-label="Overlay slice"
+                    className="slice-slider"
+                    type="range"
+                    min={0}
+                    max={maxSliceIndex}
+                    value={sliceIndex}
+                    onChange={(event) => setSliceIndex(Number(event.target.value))}
+                  />
+                  <div className="slice-button-row">
+                    <button
+                      className="slice-button"
+                      type="button"
+                      onClick={goToPreviousSlice}
+                      disabled={sliceIndex === 0}
+                    >
+                      Previous slice
+                    </button>
+                    <button
+                      className="slice-button"
+                      type="button"
+                      onClick={goToNextSlice}
+                      disabled={sliceIndex === maxSliceIndex}
+                    >
+                      Next slice
+                    </button>
+                  </div>
+                  <img
+                    key={sliceIndex}
+                    src={sliceOverlayUrl}
+                    alt={`Overlay slice ${sliceIndex}`}
+                    className="overlay-image"
+                  />
+                </div>
+              )}
+
+              <div className="download-center">
+                <a className="download-button" href={overlayUrl} download>
+                  Download Overlay
+                </a>
+                <a className="download-button secondary" href={maskUrl} download>
+                  Download Predicted Mask
+                </a>
+              </div>
+
+              <details className="raw-response">
+                <summary>Show raw API response</summary>
+                <pre>{JSON.stringify(predictionResult, null, 2)}</pre>
+              </details>
+            </section>
+          </>
         )}
       </div>
     </main>
