@@ -24,6 +24,7 @@ function App() {
   const [uploadError, setUploadError] = useState('')
   const [predictionResult, setPredictionResult] = useState<PredictionResponse | null>(null)
   const [overlayUrl, setOverlayUrl] = useState('')
+  const [maskUrl, setMaskUrl] = useState('')
 
   useEffect(() => {
     let isMounted = true
@@ -62,6 +63,7 @@ function App() {
     setUploadError('')
     setPredictionResult(null)
     setOverlayUrl('')
+    setMaskUrl('')
   }
 
   async function handleUpload() {
@@ -73,6 +75,7 @@ function App() {
     setUploadError('')
     setPredictionResult(null)
     setOverlayUrl('')
+    setMaskUrl('')
 
     try {
       // Send the selected NIfTI file to the FastAPI prediction endpoint.
@@ -81,6 +84,7 @@ function App() {
 
       setPredictionResult(result)
       setOverlayUrl(`http://127.0.0.1:8000/results/${caseId}/overlay`)
+      setMaskUrl(`http://127.0.0.1:8000/results/${caseId}/mask`)
     } catch {
       setUploadError('Upload failed.')
     } finally {
@@ -187,6 +191,15 @@ function App() {
                 <img src={overlayUrl} alt="Prediction overlay for best slice" />
               </div>
             )}
+
+            <div className="download-center">
+              <a className="download-button" href={overlayUrl} download>
+                Download Overlay
+              </a>
+              <a className="download-button secondary" href={maskUrl} download>
+                Download Predicted Mask
+              </a>
+            </div>
 
             <details className="raw-response">
               <summary>Show raw API response</summary>

@@ -40,7 +40,11 @@ def get_result_overlay(case_id: str):
     if not overlay_path.exists():
         raise HTTPException(status_code=404, detail="Overlay not found.")
 
-    return FileResponse(overlay_path, media_type="image/png")
+    return FileResponse(
+        path=overlay_path,
+        media_type="image/png",
+        filename=f"{case_id}_overlay.png",
+    )
 
 
 @router.get("/results/{case_id}/mask")
@@ -50,7 +54,11 @@ def get_result_mask(case_id: str):
     if not mask_path.exists():
         raise HTTPException(status_code=404, detail="Predicted mask not found.")
 
-    return FileResponse(mask_path, media_type="application/gzip")
+    return FileResponse(
+        path=mask_path,
+        media_type="application/gzip",
+        filename=f"{case_id}_predicted_mask.nii.gz",
+    )
 
 
 @router.post("/predict")
