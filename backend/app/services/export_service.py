@@ -9,6 +9,30 @@ HU_MIN = -1000
 HU_MAX = 400
 
 
+def create_ct_slice_png(
+    volume_path: str | Path,
+    slice_index: int,
+    output_path: str | Path,
+) -> str:
+    """Create a grayscale PNG for one axial CT slice."""
+    volume = nib.load(str(volume_path)).get_fdata()
+    if len(volume.shape) < 3 or slice_index < 0 or slice_index >= volume.shape[2]:
+        raise ValueError("Invalid slice index.")
+
+    ct_slice = volume[:, :, slice_index]
+
+    # Normalize CT Hounsfield units to an 8-bit grayscale image.
+    normalized_slice = np.clip(ct_slice, HU_MIN, HU_MAX)
+    normalized_slice = (normalized_slice - HU_MIN) / (HU_MAX - HU_MIN)
+    grayscale = (normalized_slice * 255).astype(np.uint8)
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    Image.fromarray(grayscale).save(output_path)
+
+    return str(output_path)
+
+
 def create_overlay_png(
     volume_path: str | Path,
     mask_path: str | Path,

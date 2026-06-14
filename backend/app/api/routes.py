@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse
 import nibabel as nib
 import torch
 
-from app.services.export_service import create_overlay_png
+from app.services.export_service import create_ct_slice_png, create_overlay_png
 from app.services.model_loader import get_model_status
 from app.services.inference_service import run_full_volume_inference
 
@@ -78,6 +78,35 @@ def get_result_overlay_slice(case_id: str, slice_index: int):
         / f"overlay_{slice_index:03d}.png"
     )
     create_overlay_png(volume_path, mask_path, slice_index, output_path)
+
+    return FileResponse(
+        path=output_path,
+        media_type="image/png",
+    )
+
+
+@router.get("/results/{case_id}/ct/{slice_index}")
+def get_result_ct_slice(case_id: str, slice_index: int):
+    # Generate and serve the original CT image for the requested axial slice.
+    volume_path = Path("uploads") / f"{case_id}.nii.gz"
+
+    if not volume_path.exists():
+        raise HTTPException(status_code=404, detail="Uploaded CT not found.")
+
+    volume_shape = nib.load(str(volume_path)).shape
+    if len(volume_shape) < 3 or slice_index < 0 or slice_index >= volume_shape[2]:
+        raise HTTPException(status_code=400, detail="Invalid slice index.")
+
+    output_path = (
+        Path("outputs")
+        / case_id
+        / "slices"
+        / f"ct_{slice_index:03d}.png"
+    )
+    try:
+        create_ct_slice_png(volume_path, slice_index, output_path)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Invalid slice index.") from exc
 
     return FileResponse(
         path=output_path,

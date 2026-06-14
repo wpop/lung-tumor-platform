@@ -30,6 +30,10 @@ function App() {
   const [sliceIndex, setSliceIndex] = useState(0)
 
   const maxSliceIndex = volumeDepth > 0 ? volumeDepth - 1 : 0
+  const ctSliceUrl =
+    caseId && volumeDepth > 0
+      ? `http://127.0.0.1:8000/results/${caseId}/ct/${sliceIndex}?v=${sliceIndex}`
+      : ''
   const sliceOverlayUrl =
     caseId && volumeDepth > 0
       ? `http://127.0.0.1:8000/results/${caseId}/overlay/${sliceIndex}?v=${sliceIndex}`
@@ -239,10 +243,10 @@ function App() {
                 <h2>Prediction Results</h2>
               </div>
 
-              {sliceOverlayUrl && (
+              {ctSliceUrl && sliceOverlayUrl && (
                 <div className="overlay-preview">
                   <div className="slice-control-header">
-                    <h3>Overlay Preview</h3>
+                    <h3>Slice Viewer</h3>
                     <span>
                       Slice {sliceIndex} / {maxSliceIndex}
                     </span>
@@ -274,12 +278,26 @@ function App() {
                       Next slice
                     </button>
                   </div>
-                  <img
-                    key={sliceIndex}
-                    src={sliceOverlayUrl}
-                    alt={`Overlay slice ${sliceIndex}`}
-                    className="overlay-image"
-                  />
+                  <div className="medical-viewer-grid">
+                    <figure className="medical-viewer-panel">
+                      <figcaption>Original CT</figcaption>
+                      <img
+                        key={`ct-${sliceIndex}`}
+                        src={ctSliceUrl}
+                        alt={`Original CT slice ${sliceIndex}`}
+                        className="viewer-image"
+                      />
+                    </figure>
+                    <figure className="medical-viewer-panel">
+                      <figcaption>Prediction Overlay</figcaption>
+                      <img
+                        key={`overlay-${sliceIndex}`}
+                        src={sliceOverlayUrl}
+                        alt={`Prediction overlay slice ${sliceIndex}`}
+                        className="viewer-image"
+                      />
+                    </figure>
+                  </div>
                 </div>
               )}
 
