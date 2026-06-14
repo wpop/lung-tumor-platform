@@ -90,11 +90,19 @@ function App() {
 
   return (
     <main className="app-shell">
-      <div className="status-panel">
-        <h1>Lung Tumor AI Platform</h1>
+      <div className="page-container">
+        <header className="app-header">
+          <div>
+            <h1>Lung Tumor AI Platform</h1>
+            <p>AI-assisted CT segmentation research prototype</p>
+          </div>
+          <span>Not intended for clinical diagnosis.</span>
+        </header>
 
-        <section className="panel-section">
-          <h2>Backend Status:</h2>
+        <section className="card">
+          <div className="card-header">
+            <h2>Backend Status</h2>
+          </div>
 
           {isLoading && <p className="status-text">Loading...</p>}
 
@@ -112,49 +120,80 @@ function App() {
           )}
         </section>
 
-        <section className="panel-section">
-          <h2>Prediction Upload:</h2>
+        <section className="card">
+          <div className="card-header">
+            <h2>Upload CT Volume</h2>
+          </div>
 
-          <input type="file" onChange={handleFileChange} />
+          <label className="file-picker">
+            <span>Choose NIfTI file</span>
+            <input type="file" onChange={handleFileChange} />
+          </label>
 
-          {selectedFile && <p className="file-name">{selectedFile.name}</p>}
+          <p className="file-name">
+            Selected file: <strong>{selectedFile ? selectedFile.name : 'None'}</strong>
+          </p>
 
-          <button type="button" onClick={handleUpload} disabled={!selectedFile || isUploading}>
+          <button
+            className="upload-button"
+            type="button"
+            onClick={handleUpload}
+            disabled={!selectedFile || isUploading}
+          >
             {isUploading ? 'Uploading...' : 'Upload'}
           </button>
 
-          {uploadError && <p className="status-text error">{uploadError}</p>}
-
-          {predictionResult !== null && (
-            <>
-              <div className="stats-grid">
-                <div>
-                  <span>Best slice</span>
-                  <strong>{predictionResult.inference.best_slice_index}</strong>
-                </div>
-                <div>
-                  <span>Positive voxels</span>
-                  <strong>{predictionResult.inference.positive_voxel_count}</strong>
-                </div>
-                <div>
-                  <span>Best probability</span>
-                  <strong>
-                    {predictionResult.inference.best_probability_max.toFixed(6)}
-                  </strong>
-                </div>
-              </div>
-
-              <pre>{JSON.stringify(predictionResult, null, 2)}</pre>
-
-              {overlayUrl && (
-                <div className="overlay-preview">
-                  <h2>Prediction Overlay:</h2>
-                  <img src={overlayUrl} alt="Prediction overlay for best slice" />
-                </div>
-              )}
-            </>
+          {isUploading && (
+            <p className="status-text">Prediction is running. This may take a moment.</p>
           )}
+
+          {uploadError && <p className="status-text error">{uploadError}</p>}
         </section>
+
+        {predictionResult !== null && (
+          <section className="card">
+            <div className="card-header">
+              <h2>Prediction Results</h2>
+            </div>
+
+            <div className="stats-grid">
+              <div>
+                <span>Best slice</span>
+                <strong>{predictionResult.inference.best_slice_index}</strong>
+              </div>
+              <div>
+                <span>Positive voxels</span>
+                <strong>{predictionResult.inference.positive_voxel_count}</strong>
+              </div>
+              <div>
+                <span>Best probability</span>
+                <strong>
+                  {predictionResult.inference.best_probability_max.toFixed(6)}
+                </strong>
+              </div>
+              <div>
+                <span>Threshold</span>
+                <strong>{predictionResult.inference.threshold}</strong>
+              </div>
+              <div>
+                <span>Volume shape</span>
+                <strong>{predictionResult.inference.volume_shape.join(' x ')}</strong>
+              </div>
+            </div>
+
+            {overlayUrl && (
+              <div className="overlay-preview">
+                <h3>Overlay Preview</h3>
+                <img src={overlayUrl} alt="Prediction overlay for best slice" />
+              </div>
+            )}
+
+            <details className="raw-response">
+              <summary>Show raw API response</summary>
+              <pre>{JSON.stringify(predictionResult, null, 2)}</pre>
+            </details>
+          </section>
+        )}
       </div>
     </main>
   )
