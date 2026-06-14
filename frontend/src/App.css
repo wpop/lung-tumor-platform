@@ -1,0 +1,51 @@
+#root {
+  width: 100%;
+}
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #f4f7fb;
+  color: #162033;
+}
+
+.status-panel {
+  width: min(100%, 440px);
+  padding: 2rem;
+  border: 1px solid #d9e2ef;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 12px 32px rgba(22, 32, 51, 0.08);
+}
+
+.status-panel h1 {
+  margin: 0 0 1.5rem;
+  font-size: 2rem;
+  line-height: 1.15;
+}
+
+.status-panel h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #526173;
+}
+
+.status-text,
+.status-details p {
+  margin: 0.35rem 0;
+  font-size: 1.1rem;
+}
+
+.status-details {
+  color: #17633a;
+  font-weight: 700;
+}
+
+.error {
+  color: #b42318;
+  font-weight: 700;
+}
