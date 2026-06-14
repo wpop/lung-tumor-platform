@@ -4,6 +4,7 @@ import nibabel as nib
 import numpy as np
 import torch
 
+from app.services.export_service import create_overlay_png
 from app.services.model_loader import load_model
 
 
@@ -143,9 +144,14 @@ def run_full_volume_inference(volume_path: str | Path, threshold: float = 0.5) -
     mask_path = output_dir / "predicted_mask.nii.gz"
     nib.save(nib.Nifti1Image(binary_mask_volume, affine), str(mask_path))
 
+    # Create one overlay PNG for the slice with the strongest response.
+    overlay_path = output_dir / "overlay.png"
+    create_overlay_png(volume_path, mask_path, best_slice_index, overlay_path)
+
     return {
         "volume_shape": [height, width, depth],
         "mask_path": str(mask_path),
+        "overlay_path": str(overlay_path),
         "threshold": threshold,
         "positive_voxel_count": int(binary_mask_volume.sum()),
         "best_slice_index": best_slice_index,
