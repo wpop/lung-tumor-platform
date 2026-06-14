@@ -237,6 +237,29 @@ input[type='file'] {
   cursor: not-allowed;
 }
 
+.opacity-control {
+  display: block;
+  margin-bottom: 1rem;
+  padding: 0.85rem;
+  border: 1px solid #d9e2ef;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.opacity-control span {
+  display: block;
+  margin-bottom: 0.55rem;
+  color: #233047;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.opacity-control input {
+  display: block;
+  width: 100%;
+  accent-color: #1769e0;
+}
+
 .download-center {
   display: flex;
   gap: 0.75rem;

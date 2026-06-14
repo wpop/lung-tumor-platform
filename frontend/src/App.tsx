@@ -28,8 +28,10 @@ function App() {
   const [caseId, setCaseId] = useState('')
   const [volumeDepth, setVolumeDepth] = useState(0)
   const [sliceIndex, setSliceIndex] = useState(0)
+  const [overlayOpacity, setOverlayOpacity] = useState(0.75)
 
   const maxSliceIndex = volumeDepth > 0 ? volumeDepth - 1 : 0
+  const overlayOpacityPercent = Math.round(overlayOpacity * 100)
   const ctSliceUrl =
     caseId && volumeDepth > 0
       ? `http://127.0.0.1:8000/results/${caseId}/ct/${sliceIndex}?v=${sliceIndex}`
@@ -278,6 +280,20 @@ function App() {
                       Next slice
                     </button>
                   </div>
+                  <label className="opacity-control">
+                    <span>Overlay opacity: {overlayOpacityPercent}%</span>
+                    <input
+                      aria-label="Overlay opacity"
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      value={overlayOpacity}
+                      onChange={(event) =>
+                        setOverlayOpacity(Number(event.target.value))
+                      }
+                    />
+                  </label>
                   <div className="medical-viewer-grid">
                     <figure className="medical-viewer-panel">
                       <figcaption>Original CT</figcaption>
@@ -295,6 +311,7 @@ function App() {
                         src={sliceOverlayUrl}
                         alt={`Prediction overlay slice ${sliceIndex}`}
                         className="viewer-image"
+                        style={{ opacity: overlayOpacity }}
                       />
                     </figure>
                   </div>
