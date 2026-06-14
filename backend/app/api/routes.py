@@ -3,6 +3,9 @@ from pathlib import Path
 from fastapi import APIRouter, File, UploadFile
 import torch
 
+from app.services.model_loader import get_model_status
+from app.services.inference_service import run_volume_scan_summary
+
 
 # Keep endpoint definitions together on a shared API router.
 router = APIRouter()
@@ -23,6 +26,12 @@ def read_health():
     }
 
 
+@router.get("/model/status")
+def read_model_status():
+    # Report cached model status without triggering a model load.
+    return get_model_status()
+
+
 @router.post("/predict")
 async def predict(file: UploadFile = File(...)):
     # Create the uploads directory when it does not already exist.
@@ -34,9 +43,12 @@ async def predict(file: UploadFile = File(...)):
     file_bytes = await file.read()
     saved_path.write_bytes(file_bytes)
 
-    # Return upload details only; inference is not implemented yet.
+    # Run a simple full-volume scan after the upload is saved.
+    inference = run_volume_scan_summary(saved_path)
+
     return {
-        "message": "File uploaded successfully.",
+        "message": "Prediction completed for volume scan.",
         "filename": file.filename,
         "saved_to": str(saved_path),
+        "inference": inference,
     }

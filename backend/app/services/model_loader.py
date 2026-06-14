@@ -3,18 +3,16 @@ from pathlib import Path
 
 # Keep one model instance in memory after the first successful load.
 _model = None
+_device = None
 
 
 def load_model():
     """Load and cache the trained UNet2D model."""
-    global _model
+    global _model, _device
 
     # Return the cached model so requests do not reload the checkpoint.
     if _model is not None:
         return _model
-
-    import torch
-    from app.models.unet2d import UNet2D
 
     # Resolve backend/checkpoints/best_unet2d.pt from this service file.
     backend_dir = Path(__file__).resolve().parents[2]
@@ -25,6 +23,9 @@ def load_model():
         raise FileNotFoundError(
             f"Model checkpoint not found at: {checkpoint_path}"
         )
+
+    import torch
+    from app.models.unet2d import UNet2D
 
     # Use CUDA when it is available, otherwise keep the model on CPU.
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -51,4 +52,13 @@ def load_model():
     model.eval()
 
     _model = model
+    _device = device
     return model
+
+
+def get_model_status():
+    """Return cached model load status without loading the model."""
+    return {
+        "model_loaded": _model is not None,
+        "device": _device.type if _device is not None else None,
+    }
