@@ -87,3 +87,67 @@ def run_volume_scan_summary(volume_path: str | Path) -> dict:
         "best_probability_max": best_probability_max,
         "best_probability_mean": best_probability_mean,
     }
+
+
+def run_full_volume_inference(volume_path: str | Path, threshold: float = 0.5) -> dict:
+    """Run inference on every axial slice and save a binary mask volume."""
+    volume_path = Path(volume_path)
+    nifti_image = nib.load(str(volume_path))
+    volume = nifti_image.get_fdata()
+    affine = nifti_image.affine
+    height, width, depth = volume.shape
+
+    model = load_model()
+    device = next(model.parameters()).device
+
+    probability_volume = np.zeros((height, width, depth), dtype=np.float32)
+    binary_mask_volume = np.zeros((height, width, depth), dtype=np.uint8)
+    best_slice_index = None
+    best_probability_max = None
+
+    with torch.no_grad():
+        for slice_index in range(depth):
+            normalized_slice = _normalize_slice(volume[:, :, slice_index])
+
+            # Convert the 2D slice to a BCHW tensor: (1, 1, H, W).
+            input_tensor = (
+                torch.from_numpy(normalized_slice)
+                .unsqueeze(0)
+                .unsqueeze(0)
+                .to(device)
+            )
+
+            probabilities = torch.sigmoid(model(input_tensor)).detach().cpu().numpy()
+            probability_slice = probabilities[0, 0].astype(np.float32)
+
+            probability_volume[:, :, slice_index] = probability_slice
+            binary_mask_volume[:, :, slice_index] = (
+                probability_slice >= threshold
+            ).astype(np.uint8)
+
+            probability_max = float(probability_slice.max())
+            if best_probability_max is None or probability_max > best_probability_max:
+                best_slice_index = slice_index
+                best_probability_max = probability_max
+
+    output_stem = volume_path.name
+    if output_stem.endswith(".nii.gz"):
+        output_stem = output_stem[:-7]
+    else:
+        output_stem = volume_path.stem
+
+    # Save the binary mask with the original affine matrix.
+    backend_dir = Path(__file__).resolve().parents[2]
+    output_dir = backend_dir / "outputs" / output_stem
+    output_dir.mkdir(parents=True, exist_ok=True)
+    mask_path = output_dir / "predicted_mask.nii.gz"
+    nib.save(nib.Nifti1Image(binary_mask_volume, affine), str(mask_path))
+
+    return {
+        "volume_shape": [height, width, depth],
+        "mask_path": str(mask_path),
+        "threshold": threshold,
+        "positive_voxel_count": int(binary_mask_volume.sum()),
+        "best_slice_index": best_slice_index,
+        "best_probability_max": best_probability_max,
+    }

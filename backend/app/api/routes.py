@@ -4,7 +4,7 @@ from fastapi import APIRouter, File, UploadFile
 import torch
 
 from app.services.model_loader import get_model_status
-from app.services.inference_service import run_volume_scan_summary
+from app.services.inference_service import run_full_volume_inference
 
 
 # Keep endpoint definitions together on a shared API router.
@@ -43,11 +43,11 @@ async def predict(file: UploadFile = File(...)):
     file_bytes = await file.read()
     saved_path.write_bytes(file_bytes)
 
-    # Run a simple full-volume scan after the upload is saved.
-    inference = run_volume_scan_summary(saved_path)
+    # Run full-volume inference and save the predicted mask.
+    inference = run_full_volume_inference(saved_path)
 
     return {
-        "message": "Prediction completed for volume scan.",
+        "message": "Prediction completed and mask saved.",
         "filename": file.filename,
         "saved_to": str(saved_path),
         "inference": inference,
