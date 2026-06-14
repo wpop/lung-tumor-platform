@@ -25,6 +25,15 @@ function App() {
   const [predictionResult, setPredictionResult] = useState<PredictionResponse | null>(null)
   const [overlayUrl, setOverlayUrl] = useState('')
   const [maskUrl, setMaskUrl] = useState('')
+  const [caseId, setCaseId] = useState('')
+  const [volumeDepth, setVolumeDepth] = useState(0)
+  const [sliceIndex, setSliceIndex] = useState(0)
+
+  const maxSliceIndex = volumeDepth > 0 ? volumeDepth - 1 : 0
+  const sliceOverlayUrl =
+    caseId && volumeDepth > 0
+      ? `http://127.0.0.1:8000/results/${caseId}/overlay/${sliceIndex}?v=${sliceIndex}`
+      : ''
 
   useEffect(() => {
     let isMounted = true
@@ -64,6 +73,9 @@ function App() {
     setPredictionResult(null)
     setOverlayUrl('')
     setMaskUrl('')
+    setCaseId('')
+    setVolumeDepth(0)
+    setSliceIndex(0)
   }
 
   async function handleUpload() {
@@ -76,15 +88,23 @@ function App() {
     setPredictionResult(null)
     setOverlayUrl('')
     setMaskUrl('')
+    setCaseId('')
+    setVolumeDepth(0)
+    setSliceIndex(0)
 
     try {
       // Send the selected NIfTI file to the FastAPI prediction endpoint.
       const result = await uploadPrediction(selectedFile)
-      const caseId = getCaseId(selectedFile.name)
+      const nextCaseId = getCaseId(selectedFile.name)
+      const nextVolumeDepth = result.inference.volume_shape[2] ?? 0
+      const nextSliceIndex = result.inference.best_slice_index ?? 0
 
       setPredictionResult(result)
-      setOverlayUrl(`http://127.0.0.1:8000/results/${caseId}/overlay`)
-      setMaskUrl(`http://127.0.0.1:8000/results/${caseId}/mask`)
+      setCaseId(nextCaseId)
+      setVolumeDepth(nextVolumeDepth)
+      setSliceIndex(nextSliceIndex)
+      setOverlayUrl(`http://127.0.0.1:8000/results/${nextCaseId}/overlay`)
+      setMaskUrl(`http://127.0.0.1:8000/results/${nextCaseId}/mask`)
     } catch {
       setUploadError('Upload failed.')
     } finally {
@@ -185,10 +205,29 @@ function App() {
               </div>
             </div>
 
-            {overlayUrl && (
+            {sliceOverlayUrl && (
               <div className="overlay-preview">
-                <h3>Overlay Preview</h3>
-                <img src={overlayUrl} alt="Prediction overlay for best slice" />
+                <div className="slice-control-header">
+                  <h3>Overlay Preview</h3>
+                  <span>
+                    Slice {sliceIndex} / {maxSliceIndex}
+                  </span>
+                </div>
+                <input
+                  aria-label="Overlay slice"
+                  className="slice-slider"
+                  type="range"
+                  min={0}
+                  max={maxSliceIndex}
+                  value={sliceIndex}
+                  onChange={(event) => setSliceIndex(Number(event.target.value))}
+                />
+                <img
+                  key={sliceIndex}
+                  src={sliceOverlayUrl}
+                  alt={`Overlay slice ${sliceIndex}`}
+                  className="overlay-image"
+                />
               </div>
             )}
 

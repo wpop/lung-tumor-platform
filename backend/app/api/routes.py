@@ -2,8 +2,10 @@ from pathlib import Path
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
+import nibabel as nib
 import torch
 
+from app.services.export_service import create_overlay_png
 from app.services.model_loader import get_model_status
 from app.services.inference_service import run_full_volume_inference
 
@@ -44,6 +46,42 @@ def get_result_overlay(case_id: str):
         path=overlay_path,
         media_type="image/png",
         filename=f"{case_id}_overlay.png",
+    )
+
+
+@router.get("/results/{case_id}/overlay/{slice_index}")
+def get_result_overlay_slice(case_id: str, slice_index: int):
+    # Generate and serve a mask overlay PNG for the requested axial slice.
+    volume_path = Path("uploads") / f"{case_id}.nii.gz"
+    mask_path = Path("outputs") / case_id / "predicted_mask.nii.gz"
+
+    if not volume_path.exists():
+        raise HTTPException(status_code=404, detail="Uploaded CT not found.")
+    if not mask_path.exists():
+        raise HTTPException(status_code=404, detail="Predicted mask not found.")
+
+    volume_shape = nib.load(str(volume_path)).shape
+    mask_shape = nib.load(str(mask_path)).shape
+    if (
+        len(volume_shape) < 3
+        or len(mask_shape) < 3
+        or slice_index < 0
+        or slice_index >= volume_shape[2]
+        or slice_index >= mask_shape[2]
+    ):
+        raise HTTPException(status_code=400, detail="Invalid slice index.")
+
+    output_path = (
+        Path("outputs")
+        / case_id
+        / "slices"
+        / f"overlay_{slice_index:03d}.png"
+    )
+    create_overlay_png(volume_path, mask_path, slice_index, output_path)
+
+    return FileResponse(
+        path=output_path,
+        media_type="image/png",
     )
 
 

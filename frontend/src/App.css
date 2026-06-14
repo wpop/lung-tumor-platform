@@ -175,6 +175,32 @@ input[type='file'] {
   background: #f6f9fc;
 }
 
+.slice-control-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.slice-control-header h3 {
+  margin: 0;
+}
+
+.slice-control-header span {
+  color: #526173;
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.slice-slider {
+  display: block;
+  width: 100%;
+  margin: 0 0 1rem;
+  accent-color: #1769e0;
+}
+
 .overlay-preview img {
   display: block;
   width: 100%;
@@ -263,6 +289,16 @@ pre {
 
   .download-button + .download-button {
     margin-top: 0.75rem;
+  }
+
+  .slice-control-header {
+    display: block;
+  }
+
+  .slice-control-header span {
+    display: block;
+    margin-top: 0.35rem;
+    white-space: normal;
   }
 }
 
