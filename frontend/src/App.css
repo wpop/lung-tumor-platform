@@ -323,8 +323,20 @@ input[type='file'] {
   margin-top: 1rem;
 }
 
-.vtk-viewer-section h3 {
+.vtk-section-toolbar,
+.vtk-viewer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.vtk-section-toolbar {
   margin-bottom: 0.5rem;
+}
+
+.vtk-section-toolbar h3 {
+  margin: 0;
 }
 
 .vtk-viewer {
@@ -341,7 +353,8 @@ input[type='file'] {
 }
 
 .vtk-viewer-header h4,
-.vtk-viewer-header p {
+.vtk-viewer-header p,
+.vtk-viewer-header span {
   margin: 0;
 }
 
@@ -354,7 +367,34 @@ input[type='file'] {
   margin-top: 0.3rem;
   color: #526173;
   font-size: 0.9rem;
+}
+
+.vtk-viewer-header span {
+  display: block;
+  margin-top: 0.3rem;
+  color: #526173;
+  font-size: 0.9rem;
   font-weight: 700;
+}
+
+.vtk-toggle-button,
+.vtk-reset-button {
+  flex: 0 0 auto;
+  border: 1px solid #c8d4e3;
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+  background: #ffffff;
+  color: #233047;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.vtk-toggle-button:hover,
+.vtk-reset-button:hover {
+  border-color: #1769e0;
+  color: #1769e0;
 }
 
 .vtk-viewer-canvas {
@@ -476,6 +516,17 @@ pre {
 
   .medical-viewer-grid {
     grid-template-columns: 1fr;
+  }
+
+  .vtk-section-toolbar,
+  .vtk-viewer-header {
+    display: block;
+  }
+
+  .vtk-toggle-button,
+  .vtk-reset-button {
+    width: 100%;
+    margin-top: 0.75rem;
   }
 }
 

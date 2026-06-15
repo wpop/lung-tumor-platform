@@ -37,6 +37,7 @@ function App() {
   const [volumeDepth, setVolumeDepth] = useState(0)
   const [sliceIndex, setSliceIndex] = useState(0)
   const [overlayOpacity, setOverlayOpacity] = useState(0.75)
+  const [showVtkViewer, setShowVtkViewer] = useState(true)
 
   const maxSliceIndex = volumeDepth > 0 ? volumeDepth - 1 : 0
   const overlayOpacityPercent = Math.round(overlayOpacity * 100)
@@ -377,8 +378,21 @@ function App() {
                     className="vtk-viewer-section"
                     aria-labelledby="vtk-viewer-heading"
                   >
-                    <h3 id="vtk-viewer-heading">VTK.js Viewer</h3>
-                    <VTKViewer caseId={caseId} sliceIndex={sliceIndex} />
+                    <div className="vtk-section-toolbar">
+                      <h3 id="vtk-viewer-heading">VTK.js Viewer</h3>
+                      <button
+                        className="vtk-toggle-button"
+                        type="button"
+                        onClick={() =>
+                          setShowVtkViewer((isViewerVisible) => !isViewerVisible)
+                        }
+                      >
+                        {showVtkViewer ? 'Hide 3D Viewer' : 'Show 3D Viewer'}
+                      </button>
+                    </div>
+                    {showVtkViewer && (
+                      <VTKViewer caseId={caseId} sliceIndex={sliceIndex} />
+                    )}
                   </section>
                 </div>
               )}

@@ -31,6 +31,10 @@ type RenderWindowHandle = {
   render: () => void
 }
 
+type RendererHandle = {
+  resetCamera: () => void
+}
+
 type SlicePlaneGeometry = {
   xMin: number
   xMax: number
@@ -126,8 +130,14 @@ function VTKViewer({ caseId, sliceIndex = 0 }: VTKViewerProps) {
   const planeSourceRef = useRef<SlicePlaneSource | null>(null)
   const planeGeometryRef = useRef<SlicePlaneGeometry | null>(null)
   const renderWindowRef = useRef<RenderWindowHandle | null>(null)
+  const rendererRef = useRef<RendererHandle | null>(null)
 
   latestSliceIndexRef.current = sliceIndex
+
+  function handleResetCamera() {
+    rendererRef.current?.resetCamera()
+    renderWindowRef.current?.render()
+  }
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -150,6 +160,7 @@ function VTKViewer({ caseId, sliceIndex = 0 }: VTKViewerProps) {
     const vtkObjects: VTKObject[] = []
     let isCancelled = false
 
+    rendererRef.current = renderer
     renderWindowRef.current = renderWindow
 
     function renderVolume(payload: VolumePayload) {
@@ -263,6 +274,7 @@ function VTKViewer({ caseId, sliceIndex = 0 }: VTKViewerProps) {
       isCancelled = true
       planeSourceRef.current = null
       planeGeometryRef.current = null
+      rendererRef.current = null
       renderWindowRef.current = null
       vtkObjects.forEach((vtkObject) => vtkObject.delete())
       fullScreenRenderer.delete()
@@ -281,8 +293,18 @@ function VTKViewer({ caseId, sliceIndex = 0 }: VTKViewerProps) {
   return (
     <div className="vtk-viewer">
       <div className="vtk-viewer-header">
-        <h4>3D CT Volume Preview</h4>
-        <p>Current selected slice: {sliceIndex}</p>
+        <div>
+          <h4>3D CT Volume Preview</h4>
+          <p>Interactive VTK.js volume rendering</p>
+          <span>Current selected slice: {sliceIndex}</span>
+        </div>
+        <button
+          className="vtk-reset-button"
+          type="button"
+          onClick={handleResetCamera}
+        >
+          Reset Camera
+        </button>
       </div>
       <div className="vtk-viewer-canvas" ref={containerRef} />
     </div>
