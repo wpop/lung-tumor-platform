@@ -6,6 +6,7 @@ import {
 } from 'react'
 import './App.css'
 import {
+  API_BASE_URL,
   getHealth,
   type HealthResponse,
   type PredictionResponse,
@@ -40,11 +41,11 @@ function App() {
   const overlayOpacityPercent = Math.round(overlayOpacity * 100)
   const ctSliceUrl =
     caseId && volumeDepth > 0
-      ? `http://127.0.0.1:8000/results/${caseId}/ct/${sliceIndex}?v=${sliceIndex}`
+      ? `${API_BASE_URL}/results/${caseId}/ct/${sliceIndex}?v=${sliceIndex}`
       : ''
   const sliceOverlayUrl =
     caseId && volumeDepth > 0
-      ? `http://127.0.0.1:8000/results/${caseId}/overlay/${sliceIndex}?v=${sliceIndex}`
+      ? `${API_BASE_URL}/results/${caseId}/overlay/${sliceIndex}?v=${sliceIndex}`
       : ''
   const volumeSize = predictionResult
     ? predictionResult.inference.volume_shape.join(' × ')
@@ -170,8 +171,8 @@ function App() {
       setCaseId(nextCaseId)
       setVolumeDepth(nextVolumeDepth)
       setSliceIndex(nextSliceIndex)
-      setOverlayUrl(`http://127.0.0.1:8000/results/${nextCaseId}/overlay`)
-      setMaskUrl(`http://127.0.0.1:8000/results/${nextCaseId}/mask`)
+      setOverlayUrl(`${API_BASE_URL}/results/${nextCaseId}/overlay`)
+      setMaskUrl(`${API_BASE_URL}/results/${nextCaseId}/mask`)
     } catch {
       setUploadError('Upload failed.')
     } finally {
