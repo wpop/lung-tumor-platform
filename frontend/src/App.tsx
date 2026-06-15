@@ -12,6 +12,7 @@ import {
   type PredictionResponse,
   uploadPrediction,
 } from './api/client'
+import VTKViewer from './components/VTKViewer'
 
 function getCaseId(filename: string) {
   if (filename.endsWith('.nii.gz')) {
@@ -371,6 +372,14 @@ function App() {
                       />
                     </figure>
                   </div>
+
+                  <section
+                    className="vtk-viewer-section"
+                    aria-labelledby="vtk-viewer-heading"
+                  >
+                    <h3 id="vtk-viewer-heading">VTK.js Viewer</h3>
+                    <VTKViewer />
+                  </section>
                 </div>
               )}
 
