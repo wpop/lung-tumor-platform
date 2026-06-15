@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Runtime data is mounted by docker-compose.yml.
+uploads/
+outputs/
+checkpoints/
+
+*.log
+.DS_Store
