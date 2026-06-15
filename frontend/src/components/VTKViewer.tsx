@@ -1,9 +1,12 @@
 import { useEffect, useRef } from 'react'
-import '@kitware/vtk.js/Rendering/Profiles/Geometry'
-import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor'
-import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper'
-import vtkCubeSource from '@kitware/vtk.js/Filters/Sources/CubeSource'
+import '@kitware/vtk.js/Rendering/Profiles/Volume'
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray'
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData'
+import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction'
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction'
 import vtkFullScreenRenderWindow from '@kitware/vtk.js/Rendering/Misc/FullScreenRenderWindow'
+import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume'
+import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper'
 
 function VTKViewer() {
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -27,31 +30,76 @@ function VTKViewer() {
     const renderer = fullScreenRenderer.getRenderer()
     const renderWindow = fullScreenRenderer.getRenderWindow()
 
-    // Render a simple cube while volume rendering is introduced later.
-    const cubeSource = vtkCubeSource.newInstance({
-      xLength: 1.4,
-      yLength: 1.4,
-      zLength: 1.4,
+    // Build a small synthetic volume with a soft sphere in the center.
+    const dimension = 64
+    const center = (dimension - 1) / 2
+    const radius = dimension * 0.28
+    const scalars = new Uint8Array(dimension * dimension * dimension)
+
+    for (let z = 0; z < dimension; z += 1) {
+      for (let y = 0; y < dimension; y += 1) {
+        for (let x = 0; x < dimension; x += 1) {
+          const dx = x - center
+          const dy = y - center
+          const dz = z - center
+          const distance = Math.sqrt(dx * dx + dy * dy + dz * dz)
+          const index = x + y * dimension + z * dimension * dimension
+
+          if (distance <= radius) {
+            const normalizedDistance = distance / radius
+            scalars[index] = Math.round(255 * (1 - normalizedDistance ** 2))
+          }
+        }
+      }
+    }
+
+    const imageData = vtkImageData.newInstance()
+    imageData.setDimensions(dimension, dimension, dimension)
+    imageData.setSpacing([1, 1, 1])
+    imageData.setOrigin([-center, -center, -center])
+    const scalarArray = vtkDataArray.newInstance({
+      name: 'Synthetic sphere',
+      numberOfComponents: 1,
+      values: scalars,
     })
-    const mapper = vtkMapper.newInstance()
-    const actor = vtkActor.newInstance()
+    imageData.getPointData().setScalars(scalarArray)
 
-    mapper.setInputConnection(cubeSource.getOutputPort())
-    actor.setMapper(mapper)
-    actor.getProperty().setColor(0.18, 0.55, 0.92)
-    actor.getProperty().setEdgeVisibility(true)
-    actor.getProperty().setEdgeColor(0.9, 0.96, 1)
+    // Map scalar values to color and opacity for volume rendering.
+    const colorTransferFunction = vtkColorTransferFunction.newInstance()
+    colorTransferFunction.addRGBPoint(0, 0.02, 0.04, 0.08)
+    colorTransferFunction.addRGBPoint(90, 0.18, 0.5, 0.95)
+    colorTransferFunction.addRGBPoint(255, 0.95, 0.96, 1)
 
-    renderer.addActor(actor)
+    const opacityTransferFunction = vtkPiecewiseFunction.newInstance()
+    opacityTransferFunction.addPoint(0, 0)
+    opacityTransferFunction.addPoint(60, 0.02)
+    opacityTransferFunction.addPoint(140, 0.18)
+    opacityTransferFunction.addPoint(255, 0.55)
+
+    const mapper = vtkVolumeMapper.newInstance()
+    mapper.setInputData(imageData)
+    mapper.setSampleDistance(0.7)
+
+    const volume = vtkVolume.newInstance()
+    volume.setMapper(mapper)
+    volume.getProperty().setRGBTransferFunction(0, colorTransferFunction)
+    volume.getProperty().setScalarOpacity(0, opacityTransferFunction)
+    volume.getProperty().setScalarOpacityUnitDistance(0, 2.5)
+    volume.getProperty().setInterpolationTypeToFastLinear()
+
+    renderer.addVolume(volume)
     renderer.resetCamera()
     renderWindow.render()
 
     return () => {
       // Release VTK resources when React removes this component.
       fullScreenRenderer.delete()
-      actor.delete()
+      volume.delete()
       mapper.delete()
-      cubeSource.delete()
+      imageData.delete()
+      scalarArray.delete()
+      colorTransferFunction.delete()
+      opacityTransferFunction.delete()
     }
   }, [])
 
