@@ -99,7 +99,7 @@ Interactive Viewer
 
 ### Deployment
 
-- Docker (planned)
+- Docker Compose
 
 ---
 
@@ -166,13 +166,18 @@ Frontend app: `http://127.0.0.1:5173`
 
 ### Docker
 
-Docker support is coming soon.
+Docker Compose runs the local stack with CPU inference by default. GPU-specific Docker configuration has not been added yet.
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
 
 ---
 
 ## Future Improvements
 
-- Docker Compose
+- GPU-enabled Docker configuration
 - AWS deployment
 - VTK.js 3D volume rendering
 - Cornerstone3D viewer
