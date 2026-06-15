@@ -20,6 +20,12 @@ export type PredictionResponse = {
   inference: PredictionInference
 }
 
+export type VolumeDataResponse = {
+  dimensions: [number, number, number]
+  spacing: [number, number, number]
+  scalars: number[]
+}
+
 const DEFAULT_API_BASE_URL = 'http://127.0.0.1:8000'
 
 export const API_BASE_URL = (
@@ -47,6 +53,16 @@ export async function uploadPrediction(file: File): Promise<PredictionResponse> 
 
   if (!response.ok) {
     throw new Error('Failed to upload prediction file.')
+  }
+
+  return response.json()
+}
+
+export async function getVolumeData(caseId: string): Promise<VolumeDataResponse> {
+  const response = await fetch(`${API_BASE_URL}/results/${caseId}/volume-data`)
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch CT volume data.')
   }
 
   return response.json()

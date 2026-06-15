@@ -378,7 +378,7 @@ function App() {
                     aria-labelledby="vtk-viewer-heading"
                   >
                     <h3 id="vtk-viewer-heading">VTK.js Viewer</h3>
-                    <VTKViewer />
+                    <VTKViewer caseId={caseId} />
                   </section>
                 </div>
               )}

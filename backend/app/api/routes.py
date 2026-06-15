@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 import nibabel as nib
+import numpy as np
 import torch
 
 from app.services.export_service import create_ct_slice_png, create_overlay_png
@@ -12,6 +13,10 @@ from app.services.inference_service import run_full_volume_inference
 
 # Keep endpoint definitions together on a shared API router.
 router = APIRouter()
+
+HU_MIN = -1000
+HU_MAX = 400
+VOLUME_TARGET_SHAPE = (128, 128, 64)
 
 
 @router.get("/")
@@ -112,6 +117,36 @@ def get_result_ct_slice(case_id: str, slice_index: int):
         path=output_path,
         media_type="image/png",
     )
+
+
+@router.get("/results/{case_id}/volume-data")
+def get_result_volume_data(case_id: str):
+    # Serve a browser-sized uint8 CT volume for VTK.js rendering.
+    volume_path = Path("uploads") / f"{case_id}.nii.gz"
+
+    if not volume_path.exists():
+        raise HTTPException(status_code=404, detail="Uploaded CT not found.")
+
+    volume = nib.load(str(volume_path)).get_fdata(dtype=np.float32)
+    if volume.ndim < 3:
+        raise HTTPException(status_code=400, detail="Invalid CT volume.")
+
+    volume = volume[:, :, :, 0] if volume.ndim > 3 else volume
+    strides = tuple(
+        max(1, int(np.ceil(size / target_size)))
+        for size, target_size in zip(volume.shape[:3], VOLUME_TARGET_SHAPE)
+    )
+    downsampled = volume[:: strides[0], :: strides[1], :: strides[2]]
+
+    clipped = np.clip(downsampled, HU_MIN, HU_MAX)
+    normalized = (clipped - HU_MIN) / (HU_MAX - HU_MIN)
+    uint8_volume = np.rint(normalized * 255).astype(np.uint8)
+
+    return {
+        "dimensions": list(uint8_volume.shape),
+        "spacing": [1, 1, 1],
+        "scalars": uint8_volume.ravel(order="F").tolist(),
+    }
 
 
 @router.get("/results/{case_id}/mask")
