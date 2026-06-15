@@ -327,12 +327,40 @@ input[type='file'] {
   margin-bottom: 0.5rem;
 }
 
+.vtk-viewer {
+  overflow: hidden;
+  border: 1px solid #c8d4e3;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.vtk-viewer-header {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #d9e2ef;
+  background: #f8fafc;
+}
+
+.vtk-viewer-header h4,
+.vtk-viewer-header p {
+  margin: 0;
+}
+
+.vtk-viewer-header h4 {
+  color: #233047;
+  font-size: 0.98rem;
+}
+
+.vtk-viewer-header p {
+  margin-top: 0.3rem;
+  color: #526173;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 .vtk-viewer-canvas {
   height: 320px;
   min-height: 280px;
   overflow: hidden;
-  border: 1px solid #c8d4e3;
-  border-radius: 8px;
   background: #152033;
 }
 

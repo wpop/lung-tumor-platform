@@ -3,14 +3,18 @@ import '@kitware/vtk.js/Rendering/Profiles/Volume'
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray'
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData'
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction'
+import vtkPlaneSource from '@kitware/vtk.js/Filters/Sources/PlaneSource'
+import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor'
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction'
 import vtkFullScreenRenderWindow from '@kitware/vtk.js/Rendering/Misc/FullScreenRenderWindow'
+import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper'
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume'
 import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper'
 import { getVolumeData, type VolumeDataResponse } from '../api/client'
 
 type VTKViewerProps = {
   caseId?: string
+  sliceIndex?: number
 }
 
 type VolumePayload = {
@@ -21,6 +25,26 @@ type VolumePayload = {
 
 type VTKObject = {
   delete: () => void
+}
+
+type RenderWindowHandle = {
+  render: () => void
+}
+
+type SlicePlaneGeometry = {
+  xMin: number
+  xMax: number
+  yMin: number
+  yMax: number
+  zCenter: number
+  zMaxIndex: number
+  zSpacing: number
+}
+
+type SlicePlaneSource = VTKObject & {
+  setOrigin: (x: number, y: number, z: number) => boolean
+  setPoint1: (x: number, y: number, z: number) => boolean
+  setPoint2: (x: number, y: number, z: number) => boolean
 }
 
 function createSyntheticVolume(): VolumePayload {
@@ -62,8 +86,48 @@ function toVolumePayload(volumeData: VolumeDataResponse): VolumePayload {
   }
 }
 
-function VTKViewer({ caseId }: VTKViewerProps) {
+function getSlicePlaneGeometry(payload: VolumePayload): SlicePlaneGeometry {
+  const [xSize, ySize, zSize] = payload.dimensions
+  const [xSpacing, ySpacing, zSpacing] = payload.spacing
+  const xCenter = ((xSize - 1) * xSpacing) / 2
+  const yCenter = ((ySize - 1) * ySpacing) / 2
+
+  return {
+    xMin: -xCenter,
+    xMax: xCenter,
+    yMin: -yCenter,
+    yMax: yCenter,
+    zCenter: ((zSize - 1) * zSpacing) / 2,
+    zMaxIndex: zSize - 1,
+    zSpacing,
+  }
+}
+
+function updateSlicePlane(
+  planeSource: SlicePlaneSource,
+  geometry: SlicePlaneGeometry,
+  sliceIndex: number,
+) {
+  const selectedSlice = Math.max(
+    0,
+    Math.min(geometry.zMaxIndex, Math.round(sliceIndex)),
+  )
+  const zPosition = selectedSlice * geometry.zSpacing - geometry.zCenter
+
+  // Move the plane to the selected axial slice.
+  planeSource.setOrigin(geometry.xMin, geometry.yMin, zPosition)
+  planeSource.setPoint1(geometry.xMax, geometry.yMin, zPosition)
+  planeSource.setPoint2(geometry.xMin, geometry.yMax, zPosition)
+}
+
+function VTKViewer({ caseId, sliceIndex = 0 }: VTKViewerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
+  const latestSliceIndexRef = useRef(sliceIndex)
+  const planeSourceRef = useRef<SlicePlaneSource | null>(null)
+  const planeGeometryRef = useRef<SlicePlaneGeometry | null>(null)
+  const renderWindowRef = useRef<RenderWindowHandle | null>(null)
+
+  latestSliceIndexRef.current = sliceIndex
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -85,6 +149,8 @@ function VTKViewer({ caseId }: VTKViewerProps) {
     const renderWindow = fullScreenRenderer.getRenderWindow()
     const vtkObjects: VTKObject[] = []
     let isCancelled = false
+
+    renderWindowRef.current = renderWindow
 
     function renderVolume(payload: VolumePayload) {
       const [xSize, ySize, zSize] = payload.dimensions
@@ -130,6 +196,28 @@ function VTKViewer({ caseId }: VTKViewerProps) {
       volume.getProperty().setScalarOpacityUnitDistance(0, 2.5)
       volume.getProperty().setInterpolationTypeToFastLinear()
 
+      // Draw a translucent axial plane at the selected slice.
+      const planeGeometry = getSlicePlaneGeometry(payload)
+      const planeSource = vtkPlaneSource.newInstance({
+        xResolution: 1,
+        yResolution: 1,
+      })
+      updateSlicePlane(planeSource, planeGeometry, latestSliceIndexRef.current)
+
+      const planeMapper = vtkMapper.newInstance()
+      planeMapper.setInputConnection(planeSource.getOutputPort())
+      planeMapper.setScalarVisibility(false)
+
+      const planeActor = vtkActor.newInstance()
+      planeActor.setMapper(planeMapper)
+      planeActor.setForceTranslucent(true)
+      planeActor.getProperty().setColor(1, 0.85, 0.2)
+      planeActor.getProperty().setOpacity(0.35)
+      planeActor.getProperty().setLighting(false)
+
+      planeSourceRef.current = planeSource
+      planeGeometryRef.current = planeGeometry
+
       vtkObjects.push(
         volume,
         mapper,
@@ -137,9 +225,13 @@ function VTKViewer({ caseId }: VTKViewerProps) {
         scalarArray,
         colorTransferFunction,
         opacityTransferFunction,
+        planeSource,
+        planeMapper,
+        planeActor,
       )
 
       renderer.addVolume(volume)
+      renderer.addActor(planeActor)
       renderer.resetCamera()
       renderWindow.render()
     }
@@ -169,12 +261,32 @@ function VTKViewer({ caseId }: VTKViewerProps) {
     return () => {
       // Release VTK resources when React removes this component.
       isCancelled = true
+      planeSourceRef.current = null
+      planeGeometryRef.current = null
+      renderWindowRef.current = null
       vtkObjects.forEach((vtkObject) => vtkObject.delete())
       fullScreenRenderer.delete()
     }
   }, [caseId])
 
-  return <div className="vtk-viewer-canvas" ref={containerRef} />
+  useEffect(() => {
+    if (!planeSourceRef.current || !planeGeometryRef.current) {
+      return
+    }
+
+    updateSlicePlane(planeSourceRef.current, planeGeometryRef.current, sliceIndex)
+    renderWindowRef.current?.render()
+  }, [sliceIndex])
+
+  return (
+    <div className="vtk-viewer">
+      <div className="vtk-viewer-header">
+        <h4>3D CT Volume Preview</h4>
+        <p>Current selected slice: {sliceIndex}</p>
+      </div>
+      <div className="vtk-viewer-canvas" ref={containerRef} />
+    </div>
+  )
 }
 
 export default VTKViewer
