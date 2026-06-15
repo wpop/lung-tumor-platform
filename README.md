@@ -36,6 +36,10 @@ The project supports local Docker Compose deployment with CPU inference by defau
 
 ![Download Center](docs/images/04_download_center.png)
 
+## Interactive 3D Viewer
+
+![VTK Viewer](docs/images/05_vtk_viewer.png)
+
 ---
 
 ## Current Features
